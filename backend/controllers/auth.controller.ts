@@ -72,6 +72,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       {
         id: user.id,
         username: user.username,
+        role: user.role,
       } as TokenPayload,
       process.env.JWT_SECRET as string,
       {
@@ -161,6 +162,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       {
         id: newUser.id,
         username: newUser.username,
+        role: newUser.role,
       } as TokenPayload,
       process.env.JWT_SECRET as string,
       {

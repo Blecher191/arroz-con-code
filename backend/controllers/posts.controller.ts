@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { pool } from '../config/database.ts';
+import type { CreatePostRequest } from '../interfaces/posts.interfaces.ts';
 
 // GET /api/posts
 // Public - supports ?category=Education&page=1&limit=10
@@ -34,14 +35,18 @@ const getAllPosts = async (req: Request, res: Response) => {
 // Protected - requires auth token
 const createPost = async (req: Request, res: Response) => {
     try {
-        const { title, body, category } = req.body;
+        const { title, body, category, type, imageUrl } = req.body as CreatePostRequest;
         const userId = req.user!.id;
+        const userRole = req.user!.role;
+
+        // Only professional users can create articles
+        const postType = type === 'article' && userRole === 'professional' ? 'article' : 'post';
 
         const result = await pool.query(
-            `INSERT INTO posts (user_id, title, body, category)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO posts (user_id, title, body, category, type, image_url)
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING *`,
-            [userId, title, body, category]
+            [userId, title, body, category, postType, imageUrl ?? null]
         );
 
         res.status(201).json(result.rows[0]);

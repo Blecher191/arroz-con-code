@@ -17,6 +17,7 @@ export interface RegisterRequest {
 export interface TokenPayload {
   id: number;
   username: string;
+  role: 'regular' | 'professional';
 }
 
 export interface UserResponse {
