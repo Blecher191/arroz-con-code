@@ -9,7 +9,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link to="/" className="text-xl font-bold text-indigo-600">
+        <Link to="/" className="text-xl font-bold text-blue-600">
           Arroz con Code
         </Link>
 
@@ -17,7 +17,7 @@ export default function Navbar() {
           <NavLink
             to="/chat"
             className={({ isActive }) =>
-              isActive ? "text-indigo-600" : "text-gray-600 hover:text-gray-900"
+              isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
             }
           >
             {t("home")}
@@ -25,7 +25,7 @@ export default function Navbar() {
           <NavLink
             to="/community"
             className={({ isActive }) =>
-              isActive ? "text-indigo-600" : "text-gray-600 hover:text-gray-900"
+              isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
             }
           >
             {t("community")}
@@ -39,7 +39,7 @@ export default function Navbar() {
                 to="/settings"
                 className={({ isActive }) =>
                   isActive
-                    ? "text-indigo-600"
+                    ? "text-blue-600"
                     : "text-gray-600 hover:text-gray-900"
                 }
               >
@@ -59,7 +59,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/signup"
-                className="rounded-md bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700"
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
               >
                 {t("signUp")}
               </Link>

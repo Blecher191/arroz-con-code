@@ -38,7 +38,16 @@ export default function AppLayout() {
             className="flex items-center justify-center rounded-full p-1 text-gray-500 hover:bg-gray-100"
             aria-label={t("goBack")}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
@@ -62,10 +71,24 @@ export default function AppLayout() {
       {showFab && (
         <Link
           to="/community/new"
+<<<<<<< HEAD
           className="fixed bottom-24 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700"
           aria-label={t("createPost")}
+=======
+          className="fixed bottom-24 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
+          aria-label="New post"
+>>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
@@ -78,11 +101,20 @@ export default function AppLayout() {
           to="/chat"
           className={({ isActive }) =>
             `flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium ${
-              isActive ? "text-indigo-600" : "text-gray-400"
+              isActive ? "text-blue-600" : "text-gray-400"
             }`
           }
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
           {t("aiChat")}
@@ -92,11 +124,20 @@ export default function AppLayout() {
           to="/community"
           className={({ isActive }) =>
             `flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium ${
-              isActive ? "text-indigo-600" : "text-gray-400"
+              isActive ? "text-blue-600" : "text-gray-400"
             }`
           }
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -109,11 +150,20 @@ export default function AppLayout() {
           to="/settings"
           className={({ isActive }) =>
             `flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium ${
-              isActive ? "text-indigo-600" : "text-gray-400"
+              isActive ? "text-blue-600" : "text-gray-400"
             }`
           }
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
