@@ -4,6 +4,9 @@ import likesController from '../controllers/likes.controller.ts';
 
 const router = Router({ mergeParams: true });
 
+// Get like count for a post (PUBLIC - returns userLiked if token present)
+router.get('/posts/:postId/likes', likesController.getPostLikes);
+
 // Toggle like on a post (PROTECTED)
 router.post('/posts/:postId/like', authenticateToken, likesController.togglePostLike);
 

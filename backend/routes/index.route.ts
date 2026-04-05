@@ -7,6 +7,7 @@ import commentsRoutes from './comments.route.ts';
 import likesRoutes from './likes.route.ts';
 import factCheckRoutes from './factcheck.route.ts';
 import translationRoutes from './translation.route.ts';
+import locationRoutes from './location.route.ts';
 
 const router = Router();
 
@@ -27,5 +28,8 @@ router.use('/fact-checks', factCheckRoutes);
 
 // Translation routes
 router.use('/translations', translationRoutes);
+
+// Location search routes
+router.use('/locations', locationRoutes);
 
 export default router;

@@ -4,8 +4,8 @@ import factCheckController from '../controllers/factcheck.controller.ts';
 
 const router = Router();
 
-// POST /api/fact-checks - Fact-check a post (can be public or protected)
-router.post('/', factCheckController.factCheckPost);
+// POST /api/fact-checks - Fact-check a post (PROTECTED)
+router.post('/', authenticateToken, factCheckController.factCheckPost);
 
 // GET /api/fact-checks/:postId - Get fact-check result for a post (PUBLIC)
 router.get('/:postId', factCheckController.getFactCheck);

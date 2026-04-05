@@ -77,7 +77,39 @@ const toggleCommentLike = async (req: Request, res: Response) => {
     }
 };
 
+// GET /api/posts/:postId/likes
+// Public - get like count and whether current user has liked
+const getPostLikes = async (req: Request, res: Response) => {
+    try {
+        const { postId } = req.params;
+        const userId = req.user?.id;
+
+        const countResult = await pool.query(
+            'SELECT COUNT(*) as like_count FROM likes WHERE post_id = $1',
+            [postId]
+        );
+
+        let userLiked = false;
+        if (userId) {
+            const userLike = await pool.query(
+                'SELECT id FROM likes WHERE user_id = $1 AND post_id = $2',
+                [userId, postId]
+            );
+            userLiked = userLike.rows.length > 0;
+        }
+
+        res.json({
+            likeCount: parseInt(countResult.rows[0].like_count),
+            userLiked,
+        });
+    } catch (err) {
+        console.error('Error fetching post likes:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 export default {
     togglePostLike,
     toggleCommentLike,
+    getPostLikes,
 };
