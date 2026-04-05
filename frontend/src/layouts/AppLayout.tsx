@@ -71,13 +71,8 @@ export default function AppLayout() {
       {showFab && (
         <Link
           to="/community/new"
-<<<<<<< HEAD
-          className="fixed bottom-24 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700"
-          aria-label={t("createPost")}
-=======
           className="fixed bottom-24 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
-          aria-label="New post"
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
+          aria-label={t("createPost")}
         >
           <svg
             width="24"

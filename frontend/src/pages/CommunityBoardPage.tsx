@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePosts } from "../hooks/useApi";
 import PostCard from "../components/PostCard";
 

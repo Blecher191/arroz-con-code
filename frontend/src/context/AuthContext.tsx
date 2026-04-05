@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       try {
-        const response = await authAPI.updateLanguagePreference(language);
+        await authAPI.updateLanguagePreference(language);
         if (user) {
           const updatedUser: User = {
             ...user,
