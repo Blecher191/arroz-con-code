@@ -7,12 +7,7 @@ import FactCheckBadge from "../components/FactCheckBadge";
 import LikeButton from "../components/LikeButton";
 import { formatTime } from "../utils/formatTime";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Education: "bg-blue-50 text-blue-700",
-  Healthcare: "bg-rose-50 text-rose-700",
-  Technology: "bg-violet-50 text-violet-700",
-  "New Tech": "bg-violet-50 text-violet-700",
-};
+import { CATEGORY_COLORS } from "../utils/categories";
 
 export default function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();

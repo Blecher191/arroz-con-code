@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { usePosts } from "../hooks/useApi";
 import PostCard from "../components/PostCard";
 
-const CATEGORIES = ["All", "Education", "Healthcare", "New Tech"] as const;
-type Category = (typeof CATEGORIES)[number];
+import type { FeedCategory } from "../types";
+type Category = FeedCategory;
+const CATEGORIES: Category[] = ["All", "Education", "Healthcare", "New Tech"];
 
 export default function CommunityBoardPage() {
   const [activeCategory, setActiveCategory] = useState<Category>("All");

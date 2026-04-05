@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-type Category = "Education" | "Healthcare" | "Technology";
-const CATEGORIES: Category[] = ["Education", "Healthcare", "Technology"];
+import type { Category } from "../types";
+import { CATEGORIES } from "../utils/categories";
 
 export default function CreateArticlePage() {
   const navigate = useNavigate();

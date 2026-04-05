@@ -5,7 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import ArticleCard from "../components/ArticleCard";
 
-type Category = "All" | "Education" | "Healthcare" | "New Tech";
+import type { FeedCategory } from "../types";
+type Category = FeedCategory;
 const CATEGORIES: Category[] = ["All", "Education", "Healthcare", "New Tech"];
 
 export default function FeedPage() {
