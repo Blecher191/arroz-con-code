@@ -8,7 +8,7 @@ export default function SignInPage() {
   const location = useLocation();
 
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
   const [localError, setLocalError] = useState<string | null>(null);
@@ -27,8 +27,8 @@ export default function SignInPage() {
     setLocalError(null);
 
     // Validation
-    if (!formData.email.trim()) {
-      setLocalError("Email is required");
+    if (!formData.username.trim()) {
+      setLocalError("Username is required");
       return;
     }
     if (!formData.password) {
@@ -37,7 +37,7 @@ export default function SignInPage() {
     }
 
     try {
-      await login(formData.email, formData.password);
+      await login(formData.username, formData.password);
       // Redirect to where they came from or to home
       const from = location.state?.from?.pathname ?? "/";
       navigate(from, { replace: true });
@@ -60,15 +60,15 @@ export default function SignInPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700" htmlFor="email">
-            Email
+          <label className="text-sm font-medium text-gray-700" htmlFor="username">
+            Username
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={formData.email}
+            id="username"
+            name="username"
+            type="text"
+            placeholder="maria_garcia"
+            value={formData.username}
             onChange={handleChange}
             disabled={loading}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100"

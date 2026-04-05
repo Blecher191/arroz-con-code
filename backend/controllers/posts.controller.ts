@@ -64,9 +64,23 @@ const getAllPosts = async (req: Request, res: Response) => {
 // Protected - requires auth token
 const createPost = async (req: Request, res: Response) => {
     try {
+        // Debug: Check if user exists
+        if (!req.user) {
+            console.error('req.user is undefined');
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
+
         const { title, body, category, type, imageUrl, latitude, longitude, locationName } = req.body as CreatePostRequest;
-        const userId = req.user!.id;
-        const userRole = req.user!.role;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        // Validate required fields
+        if (!title || !body || !category) {
+            console.error('Missing required fields:', { title, body, category });
+            res.status(400).json({ error: 'Title, body, and category are required' });
+            return;
+        }
 
         // Only professional users can create articles
         const postType = type === 'article' && userRole === 'professional' ? 'article' : 'post';

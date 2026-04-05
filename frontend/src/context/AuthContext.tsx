@@ -26,7 +26,7 @@ interface AuthContextValue {
     longitude?: number;
     locationName?: string;
   }) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
 }
@@ -87,11 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const handleLogin = useCallback(
-    async (email: string, password: string) => {
+    async (username: string, password: string) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await authAPI.login({ email, password });
+        const response = await authAPI.login({ username, password });
         storeAuth(response.token, {
           id: response.user.id,
           username: response.user.username,

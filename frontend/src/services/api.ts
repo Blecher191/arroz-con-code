@@ -75,7 +75,7 @@ export const authAPI = {
       body: JSON.stringify(data),
     }),
 
-  login: (data: { email: string; password: string }) =>
+  login: (data: { username: string; password: string }) =>
     apiCall<{
       token: string;
       user: {
