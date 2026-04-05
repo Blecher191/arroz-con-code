@@ -30,6 +30,7 @@ export default function ArticleDetailPage() {
 
       <div className="mt-2">
         <TranslateButton
+          postId={parseInt(id || "0")}
           isTranslated={false}
           onTranslate={async () => {
             // TODO: call translation API with article id

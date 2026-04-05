@@ -1,56 +1,94 @@
 import { Link } from "react-router";
+import { useFactCheck } from "../hooks/useApi";
+import FactCheckBadge from "./FactCheckBadge";
+import LikeButton from "./LikeButton";
 import TranslateButton from "./TranslateButton";
 
-type Category = "Education" | "Healthcare" | "Technology";
+type Category = "Education" | "Healthcare" | "Technology" | "New Tech";
 
 const CATEGORY_COLORS: Record<Category, string> = {
   Education: "bg-blue-50 text-blue-700",
   Healthcare: "bg-rose-50 text-rose-700",
   Technology: "bg-violet-50 text-violet-700",
+  "New Tech": "bg-violet-50 text-violet-700",
 };
 
 interface PostCardProps {
-  id: string;
-  title: string;
-  body: string;
-  category: Category;
-  authorName: string;
-  createdAt: string;
+  post: {
+    id: number;
+    title: string;
+    body: string;
+    category: Category;
+    createdAt: string;
+    authorUsername: string;
+    authorDisplayName?: string;
+    locationName?: string;
+    type?: "post" | "article";
+  };
 }
 
-export default function PostCard({
-  id,
-  title,
-  body,
-  category,
-  authorName,
-  createdAt,
-}: PostCardProps) {
+// Helper to format relative time
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const secondsAgo = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (secondsAgo < 60) return "now";
+  if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+  if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+  if (secondsAgo < 604800) return `${Math.floor(secondsAgo / 86400)}d ago`;
+  
+  return date.toLocaleDateString();
+}
+
+export default function PostCard({ post }: PostCardProps) {
+  const { factCheck, loading: factCheckLoading } = useFactCheck(post.id);
+  const category = post.category as Category;
+  const authorDisplay = post.authorDisplayName || post.authorUsername;
+  const timeAgo = formatTime(post.createdAt);
+
   return (
     <article className="border-b border-gray-100 px-4 py-4 hover:bg-gray-50">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[category]}`}
         >
           {category}
         </span>
+        
+        {factCheck && (
+          <FactCheckBadge
+            status={factCheck.status as any}
+            confidenceScore={factCheck.confidenceScore}
+          />
+        )}
+        {factCheckLoading && <FactCheckBadge loading />}
+        
         <span className="text-xs text-gray-400">
-          {authorName} · {createdAt}
+          {authorDisplay} · {timeAgo}
         </span>
       </div>
 
-      <Link to={`/post/${id}`} className="group">
+      <Link to={`/post/${post.id}`} className="group">
         <h3 className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600">
-          {title}
+          {post.title}
         </h3>
-        <p className="mt-1 line-clamp-2 text-sm text-gray-500">{body}</p>
+        <p className="mt-1 line-clamp-2 text-sm text-gray-500">{post.body}</p>
       </Link>
 
-      <div className="mt-3">
+      {post.locationName && (
+        <p className="mt-2 text-xs text-gray-400">
+          📍 {post.locationName}
+        </p>
+      )}
+
+      <div className="mt-3 flex items-center gap-4">
+        <LikeButton postId={post.id} />
         <TranslateButton
+          postId={post.id}
           isTranslated={false}
           onTranslate={async () => {
-            // TODO: call translation API
+            // Translation will be handled by TranslateButton component
           }}
         />
       </div>

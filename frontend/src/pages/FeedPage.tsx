@@ -1,42 +1,58 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { usePosts } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import ArticleCard from "../components/ArticleCard";
 
-type Category = "All" | "Education" | "Healthcare" | "Technology";
-const CATEGORIES: Category[] = ["All", "Education", "Healthcare", "Technology"];
+type Category = "All" | "Education" | "Healthcare" | "New Tech";
+const CATEGORIES: Category[] = ["All", "Education", "Healthcare", "New Tech"];
 
 export default function FeedPage() {
-  const [locationDenied, setLocationDenied] = useState(false);
-  const [zipInput, setZipInput] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const [locationDenied, setLocationDenied] = useState(false);
 
+  // Fetch posts with active category filter
+  const { posts, loading, error, refetch } = usePosts(
+    activeCategory !== "All"
+      ? { category: activeCategory }
+      : undefined
+  );
+
+  // Get user's geolocation on component mount
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (_pos) => {
-        // TODO: pass coords to feed API
-        // fetchFeed({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-      },
-      () => setLocationDenied(true),
-    );
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          // Location acquired successfully
+        },
+        () => {
+          setLocationDenied(true);
+        }
+      );
+    }
   }, []);
+
+  // Refetch when category changes
+  useEffect(() => {
+    refetch();
+  }, [activeCategory, refetch]);
 
   return (
     <div className="mx-auto max-w-2xl">
       {/* Location fallback */}
       {locationDenied && (
         <div className="flex items-center gap-2 border-b border-gray-100 bg-amber-50 px-4 py-3">
-          <span className="text-sm text-amber-700">
-            Location access denied.
+          <span className="text-xs text-amber-700">
+            📍 Location not available
           </span>
-          <input
-            type="text"
-            value={zipInput}
-            onChange={(e) => setZipInput(e.target.value)}
-            placeholder="Enter city or zip code"
-            className="flex-1 rounded-md border border-amber-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-amber-400"
-          />
-          <button className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700">
-            Go
+          <button 
+            onClick={() => navigate("/post/new")}
+            className="ml-auto text-xs font-medium text-amber-700 hover:underline"
+          >
+            Create post
           </button>
         </div>
       )}
@@ -58,42 +74,102 @@ export default function FeedPage() {
         ))}
       </div>
 
-      {/* Feed items — placeholder content until API is wired */}
+      {/* Error state */}
+      {error && (
+        <div className="m-4 rounded-md bg-red-50 p-4 text-sm text-red-800">
+          <p className="font-medium">Failed to load posts</p>
+          <p className="mt-1 text-xs">{error}</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-2 text-xs font-medium text-red-600 hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {loading && !posts.length && (
+        <div className="space-y-4 p-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="border-b border-gray-100 px-4 py-4 animate-pulse"
+            >
+              <div className="mb-2 flex gap-2">
+                <div className="h-6 w-20 rounded-full bg-gray-200" />
+                <div className="h-6 flex-1 rounded-full bg-gray-200" />
+              </div>
+              <div className="mb-2 h-4 w-3/4 rounded bg-gray-200" />
+              <div className="h-4 w-full rounded bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !posts.length && (
+        <div className="p-8 text-center">
+          <p className="mb-2 text-sm font-medium text-gray-600">
+            No posts found
+          </p>
+          <p className="text-xs text-gray-400">
+            {activeCategory === "All"
+              ? "Be the first to share something!"
+              : `No posts in ${activeCategory} yet`}
+          </p>
+          {user && (
+            <button
+              onClick={() => navigate("/post/new")}
+              className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              Create first post
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Feed items — real posts from API */}
       <div>
-        <ArticleCard
-          id="1"
-          title="Free health clinics in your area this weekend"
-          body="Several community health clinics are offering free checkups and vaccinations this Saturday and Sunday for residents within the county."
-          category="Healthcare"
-          authorName="Dr. Maria Gonzalez"
-          isVerified={true}
-          createdAt="2h ago"
-        />
-        <PostCard
-          id="2"
-          title="How do I apply for FAFSA if I don't have a Social Security number?"
-          body="My younger sibling wants to go to community college but we're not sure how to fill out the FAFSA. Has anyone been in this situation?"
-          category="Education"
-          authorName="javier_m"
-          createdAt="4h ago"
-        />
-        <ArticleCard
-          id="3"
-          title="5 free AI tools that can actually help you at work"
-          body="You don't need to pay for expensive software. Here are five free tools being used by small business owners in our community right now."
-          category="Technology"
-          authorName="Carlos Reyes"
-          isVerified={true}
-          createdAt="1d ago"
-        />
-        <PostCard
-          id="4"
-          title="Good dentists that accept Medi-Cal near downtown?"
-          body="Looking for a dentist who accepts Medi-Cal. My daughter needs a cleaning and I haven't been able to find one that's taking new patients."
-          category="Healthcare"
-          authorName="rosa_flores"
-          createdAt="1d ago"
-        />
+        {posts.map((post: any) => {
+          // Differentiate between articles (professionals) and regular posts
+          if (post.type === "article") {
+            return (
+              <ArticleCard
+                key={post.id}
+                post={{
+                  id: post.id,
+                  title: post.title,
+                  body: post.body,
+                  category: post.category as any,
+                  createdAt: post.createdAt,
+                  authorUsername: post.authorUsername || "Anonymous",
+                  authorDisplayName: post.authorDisplayName,
+                  locationName: post.locationName,
+                  type: post.type,
+                }}
+                isVerified={true}
+              />
+            );
+          }
+
+          return (
+            <PostCard
+              key={post.id}
+              post={{
+                id: post.id,
+                title: post.title,
+                body: post.body,
+                category: post.category as any,
+                createdAt: post.createdAt,
+                authorUsername: post.authorUsername || "Anonymous",
+                authorDisplayName: post.authorDisplayName,
+                locationName: post.locationName,
+                type: post.type,
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );

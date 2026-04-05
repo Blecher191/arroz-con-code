@@ -180,6 +180,9 @@ SELECT
   p.category,
   p.type,
   p.image_url,
+  p.latitude,
+  p.longitude,
+  p.location_name,
   p.created_at,
   COUNT(DISTINCT l.id) as like_count,
   COUNT(DISTINCT c.id) as comment_count
