@@ -6,9 +6,8 @@ import TranslateButton from "../components/TranslateButton";
 import FactCheckBadge from "../components/FactCheckBadge";
 import LikeButton from "../components/LikeButton";
 import { formatTime } from "../utils/formatTime";
-import type { Category } from "../types";
-
 import { CATEGORY_COLORS } from "../utils/categories";
+import type { Category } from "../types";
 
 export default function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
