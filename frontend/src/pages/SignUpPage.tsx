@@ -6,12 +6,8 @@ import { useUITranslation } from "../hooks/useUITranslation";
 export default function SignUpPage() {
   const { register, loading, error } = useAuth();
   const navigate = useNavigate();
-<<<<<<< HEAD
   const { t } = useUITranslation();
   
-=======
-
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -97,13 +93,8 @@ export default function SignUpPage() {
 
   return (
     <section className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16">
-<<<<<<< HEAD
       <h1 className="text-3xl font-bold text-gray-900">{t("createAccount")}</h1>
       
-=======
-      <h1 className="text-3xl font-bold text-gray-900">Create an account</h1>
-
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
       {displayError && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
           {displayError}
@@ -124,16 +115,8 @@ export default function SignUpPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-<<<<<<< HEAD
           <label className="text-sm font-medium text-gray-700" htmlFor="username">
             {t("username")}
-=======
-          <label
-            className="text-sm font-medium text-gray-700"
-            htmlFor="username"
-          >
-            Username
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
           </label>
           <input
             id="username"
@@ -164,16 +147,8 @@ export default function SignUpPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-<<<<<<< HEAD
           <label className="text-sm font-medium text-gray-700" htmlFor="password">
             {t("password")}
-=======
-          <label
-            className="text-sm font-medium text-gray-700"
-            htmlFor="password"
-          >
-            Password
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
           </label>
           <input
             id="password"
@@ -189,16 +164,8 @@ export default function SignUpPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-<<<<<<< HEAD
           <label className="text-sm font-medium text-gray-700" htmlFor="locationName">
             {t("location")} ({t("save") === "Save" ? "Optional" : "Opcional"})
-=======
-          <label
-            className="text-sm font-medium text-gray-700"
-            htmlFor="locationName"
-          >
-            City/Location (Optional)
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
           </label>
           <input
             id="locationName"
@@ -219,16 +186,8 @@ export default function SignUpPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-<<<<<<< HEAD
           <label className="text-sm font-medium text-gray-700" htmlFor="preferredLanguage">
             {t("preferredLanguage")}
-=======
-          <label
-            className="text-sm font-medium text-gray-700"
-            htmlFor="preferredLanguage"
-          >
-            Preferred Language
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
           </label>
           <select
             id="preferredLanguage"
@@ -253,15 +212,9 @@ export default function SignUpPage() {
       </form>
 
       <p className="text-center text-sm text-gray-500">
-<<<<<<< HEAD
         {t("alreadyHaveAccount")}{" "}
         <Link to="/signin" className="text-indigo-600 hover:underline">
           {t("signIn")}
-=======
-        Already have an account?{" "}
-        <Link to="/signin" className="text-blue-600 hover:underline">
-          Sign in
->>>>>>> 5660f4070557382c9a86f0cf2609245df82fd105
         </Link>
       </p>
     </section>
