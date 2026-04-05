@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { useFactCheck } from "../hooks/useApi";
+import { formatTime } from "../utils/formatTime";
 import FactCheckBadge from "./FactCheckBadge";
 import LikeButton from "./LikeButton";
 import TranslateButton from "./TranslateButton";
@@ -27,13 +29,14 @@ interface PostCardProps {
   };
 }
 
-import { formatTime } from "../utils/formatTime";
-
 export default function PostCard({ post }: PostCardProps) {
   const { factCheck, loading: factCheckLoading } = useFactCheck(post.id);
+  const [translatedBody, setTranslatedBody] = useState<string | null>(null);
+
   const category = post.category as Category;
   const authorDisplay = post.authorDisplayName || post.authorUsername;
   const timeAgo = formatTime(post.createdAt);
+  const displayBody = translatedBody || post.body;
 
   return (
     <article className="border-b border-gray-100 px-4 py-4 hover:bg-gray-50">
@@ -43,7 +46,7 @@ export default function PostCard({ post }: PostCardProps) {
         >
           {category}
         </span>
-        
+
         {factCheck && (
           <FactCheckBadge
             status={factCheck.status as any}
@@ -51,7 +54,7 @@ export default function PostCard({ post }: PostCardProps) {
           />
         )}
         {factCheckLoading && <FactCheckBadge loading />}
-        
+
         <span className="text-xs text-gray-400">
           {authorDisplay} · {timeAgo}
         </span>
@@ -61,13 +64,11 @@ export default function PostCard({ post }: PostCardProps) {
         <h3 className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600">
           {post.title}
         </h3>
-        <p className="mt-1 line-clamp-2 text-sm text-gray-500">{post.body}</p>
+        <p className="mt-1 line-clamp-2 text-sm text-gray-500">{displayBody}</p>
       </Link>
 
       {post.locationName && (
-        <p className="mt-2 text-xs text-gray-400">
-          📍 {post.locationName}
-        </p>
+        <p className="mt-2 text-xs text-gray-400">📍 {post.locationName}</p>
       )}
 
       <div className="mt-3 flex items-center gap-4">
@@ -75,9 +76,7 @@ export default function PostCard({ post }: PostCardProps) {
         <TranslateButton
           postId={post.id}
           isTranslated={false}
-          onTranslate={async () => {
-            // Translation will be handled by TranslateButton component
-          }}
+          onTranslated={(body) => setTranslatedBody(body)}
         />
       </div>
     </article>
