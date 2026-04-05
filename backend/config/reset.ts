@@ -288,15 +288,15 @@ const resetDatabase = async () => {
     await client.query(`
       INSERT INTO comments (post_id, user_id, body)
       VALUES
-        ($1,  $7,  'Great question! I recommend starting with Khan Academy and then moving to more advanced courses.'),
-        ($2,  $8,  'Las becas de Google y Microsoft son muy buenas para estudiantes latinos. Revisa sus sitios web.'),
-        ($3,  $9,  'This guide is amazing! Very helpful for first-generation college students.'),
-        ($4,  $10, 'Check your local health department website. Many cities have free or low-cost clinics.'),
-        ($5,  $11, 'Consulta con tu médico inmediatamente si tienes fiebre alta o dificultad para respirar.'),
-        ($6,  $12, 'Thank you for writing this. It really helps our community understand their options.'),
-        ($7,  $13, 'Start with Python! It''s beginner-friendly and very in-demand.'),
-        ($8,  $14, 'freeCodeCamp tiene cursos gratuitos y en español. ¡Los recomiendo mucho!'),
-        ($9,  $15, 'Great breakdown of AI career paths. Very informative for anyone looking to get into tech.')
+        ($1,  $10, 'Great question! I recommend starting with Khan Academy and then moving to more advanced courses.'),
+        ($2,  $11, 'Las becas de Google y Microsoft son muy buenas para estudiantes latinos. Revisa sus sitios web.'),
+        ($3,  $12, 'This guide is amazing! Very helpful for first-generation college students.'),
+        ($4,  $13, 'Check your local health department website. Many cities have free or low-cost clinics.'),
+        ($5,  $14, 'Consulta con tu médico inmediatamente si tienes fiebre alta o dificultad para respirar.'),
+        ($6,  $15, 'Thank you for writing this. It really helps our community understand their options.'),
+        ($7,  $16, 'Start with Python! It''s beginner-friendly and very in-demand.'),
+        ($8,  $17, 'freeCodeCamp tiene cursos gratuitos y en español. ¡Los recomiendo mucho!'),
+        ($9,  $18, 'Great breakdown of AI career paths. Very informative for anyone looking to get into tech.')
       RETURNING id;
     `, [
       allPostIds[0], allPostIds[1], allPostIds[2],
