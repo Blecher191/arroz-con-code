@@ -1,5 +1,8 @@
-// dotenv is already loaded in database.ts before importing pool
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { pool } from './database.ts';
+import bcrypt from 'bcrypt';
 
 const resetDatabase = async () => {
   const client = await pool.connect();
@@ -8,6 +11,8 @@ const resetDatabase = async () => {
     console.log('🔄 Resetting database...');
 
     // Drop existing tables in reverse order of dependencies
+    await client.query('DROP TABLE IF EXISTS location_searches CASCADE;');
+    await client.query('DROP TABLE IF EXISTS translations CASCADE;');
     await client.query('DROP TABLE IF EXISTS resources CASCADE;');
     await client.query('DROP TABLE IF EXISTS chat_messages CASCADE;');
     await client.query('DROP TABLE IF EXISTS fact_checks CASCADE;');
@@ -21,9 +26,8 @@ const resetDatabase = async () => {
 
     console.log('✅ Dropped existing tables');
 
-    // Create tables
+    // Create tables (in sync with schema.sql)
     await client.query(`
-      -- Users Table
       CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -32,12 +36,14 @@ const resetDatabase = async () => {
         display_name VARCHAR(100),
         avatar_url VARCHAR(255),
         role VARCHAR(20) DEFAULT 'regular' NOT NULL,
+        latitude FLOAT,
+        longitude FLOAT,
+        location_name VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP
       );
 
-      -- Posts Table (Community Board)
       CREATE TABLE posts (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -46,12 +52,14 @@ const resetDatabase = async () => {
         category VARCHAR(50) NOT NULL,
         type VARCHAR(20) DEFAULT 'post' NOT NULL,
         image_url VARCHAR(255),
+        latitude FLOAT,
+        longitude FLOAT,
+        location_name VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP
       );
 
-      -- Comments Table
       CREATE TABLE comments (
         id SERIAL PRIMARY KEY,
         post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -63,7 +71,6 @@ const resetDatabase = async () => {
         deleted_at TIMESTAMP
       );
 
-      -- Nested Replies (comments on comments)
       CREATE TABLE replies (
         id SERIAL PRIMARY KEY,
         comment_id INT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
@@ -75,7 +82,6 @@ const resetDatabase = async () => {
         deleted_at TIMESTAMP
       );
 
-      -- Likes Table
       CREATE TABLE likes (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -91,7 +97,6 @@ const resetDatabase = async () => {
         )
       );
 
-      -- Fact Check Results Table
       CREATE TABLE fact_checks (
         id SERIAL PRIMARY KEY,
         post_id INT NOT NULL UNIQUE REFERENCES posts(id) ON DELETE CASCADE,
@@ -104,7 +109,6 @@ const resetDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      -- Chat Messages Table
       CREATE TABLE chat_messages (
         id SERIAL PRIMARY KEY,
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
@@ -117,7 +121,6 @@ const resetDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      -- Resources Table
       CREATE TABLE resources (
         id SERIAL PRIMARY KEY,
         category VARCHAR(50) NOT NULL,
@@ -130,10 +133,34 @@ const resetDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      -- Indexes
+      CREATE TABLE translations (
+        id SERIAL PRIMARY KEY,
+        post_id INT NOT NULL UNIQUE REFERENCES posts(id) ON DELETE CASCADE,
+        original_language VARCHAR(10) NOT NULL,
+        original_text TEXT NOT NULL,
+        translated_language VARCHAR(10) NOT NULL,
+        translated_text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE location_searches (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        query TEXT NOT NULL,
+        latitude FLOAT NOT NULL,
+        longitude FLOAT NOT NULL,
+        results JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create indexes
+    await client.query(`
       CREATE INDEX idx_posts_user_id ON posts(user_id);
       CREATE INDEX idx_posts_category ON posts(category);
+      CREATE INDEX idx_posts_type ON posts(type);
       CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
+      CREATE INDEX idx_posts_latitude_longitude ON posts(latitude, longitude);
       CREATE INDEX idx_comments_post_id ON comments(post_id);
       CREATE INDEX idx_comments_user_id ON comments(user_id);
       CREATE INDEX idx_replies_comment_id ON replies(comment_id);
@@ -144,77 +171,140 @@ const resetDatabase = async () => {
       CREATE INDEX idx_chat_messages_session_id ON chat_messages(session_id);
       CREATE INDEX idx_resources_category ON resources(category);
       CREATE INDEX idx_users_email ON users(email);
+      CREATE INDEX idx_users_role ON users(role);
+      CREATE INDEX idx_users_latitude_longitude ON users(latitude, longitude);
+      CREATE INDEX idx_translations_post_id ON translations(post_id);
+      CREATE INDEX idx_location_searches_user_id ON location_searches(user_id);
+      CREATE INDEX idx_location_searches_location ON location_searches(latitude, longitude);
     `);
 
-    console.log('✅ Created all tables');
+    // Create views
+    await client.query(`
+      CREATE VIEW posts_with_stats AS
+      SELECT
+        p.id, p.user_id, u.username, u.display_name, u.avatar_url, u.role,
+        p.title, p.body, p.category, p.type, p.image_url,
+        p.latitude, p.longitude, p.location_name, p.created_at,
+        COUNT(DISTINCT l.id) as like_count,
+        COUNT(DISTINCT c.id) as comment_count
+      FROM posts p
+      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN likes l ON p.id = l.post_id
+      LEFT JOIN comments c ON p.id = c.post_id AND c.deleted_at IS NULL
+      WHERE p.deleted_at IS NULL
+      GROUP BY p.id, u.id;
+
+      CREATE VIEW comments_with_stats AS
+      SELECT
+        c.id, c.post_id, c.user_id, u.username, u.display_name, u.avatar_url,
+        c.body, c.image_url, c.created_at,
+        COUNT(DISTINCT l.id) as like_count,
+        COUNT(DISTINCT r.id) as reply_count
+      FROM comments c
+      LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN likes l ON c.id = l.comment_id
+      LEFT JOIN replies r ON c.id = r.comment_id AND r.deleted_at IS NULL
+      WHERE c.deleted_at IS NULL
+      GROUP BY c.id, u.id;
+    `);
+
+    console.log('✅ Created all tables, indexes, and views');
+
+    // Hash demo password at runtime so logins actually work
+    const demoPassword = await bcrypt.hash('demo1234', 10);
 
     // Seed Users
     const usersResult = await client.query(`
       INSERT INTO users (email, username, password_hash, display_name, avatar_url, role)
       VALUES
-        ('maria@example.com', 'maria_garcia', '$2b$10$Y9IfzgYZUVZ8', 'María García', 'https://api.dicebear.com/7.x/avataaars/svg?seed=maria', 'professional'),
-        ('carlos@example.com', 'carlos_lopez', '$2b$10$Y9IfzgYZUVZ8', 'Carlos López', 'https://api.dicebear.com/7.x/avataaars/svg?seed=carlos', 'regular'),
-        ('lucia@example.com', 'lucia_martinez', '$2b$10$Y9IfzgYZUVZ8', 'Lucía Martínez', 'https://api.dicebear.com/7.x/avataaars/svg?seed=lucia', 'professional'),
-        ('juan@example.com', 'juan_ruiz', '$2b$10$Y9IfzgYZUVZ8', 'Juan Ruiz', 'https://api.dicebear.com/7.x/avataaars/svg?seed=juan', 'regular'),
-        ('sofia@example.com', 'sofia_torres', '$2b$10$Y9IfzgYZUVZ8', 'Sofía Torres', 'https://api.dicebear.com/7.x/avataaars/svg?seed=sofia', 'professional')
+        ('maria@example.com',  'maria_garcia',   $1, 'María García',   'https://api.dicebear.com/7.x/avataaars/svg?seed=maria',   'professional'),
+        ('carlos@example.com', 'carlos_lopez',   $1, 'Carlos López',   'https://api.dicebear.com/7.x/avataaars/svg?seed=carlos',  'regular'),
+        ('lucia@example.com',  'lucia_martinez', $1, 'Lucía Martínez', 'https://api.dicebear.com/7.x/avataaars/svg?seed=lucia',   'professional'),
+        ('juan@example.com',   'juan_ruiz',      $1, 'Juan Ruiz',      'https://api.dicebear.com/7.x/avataaars/svg?seed=juan',    'regular'),
+        ('sofia@example.com',  'sofia_torres',   $1, 'Sofía Torres',   'https://api.dicebear.com/7.x/avataaars/svg?seed=sofia',   'professional')
       RETURNING id;
-    `);
+    `, [demoPassword]);
 
-    const userIds = usersResult.rows.map((r) => r.id);
-    console.log('✅ Seeded users (3 professionals, 2 regular)');
+    const userIds = usersResult.rows.map((r: { id: number }) => r.id);
+    console.log('✅ Seeded 5 users (password: demo1234)');
 
-    // Seed Posts (Education) - mix of posts and articles
+    // Seed Posts — Education
     const educationPosts = await client.query(`
       INSERT INTO posts (user_id, title, body, category, type)
       VALUES
-        ($1, 'How to prepare for college entrance exams?', 'I am a junior in high school and I want to prepare for my college entrance exams. What are the best resources available?', 'Education', 'post'),
-        ($2, '¿Becas disponibles para estudiantes hispanos?', 'Estoy buscando información sobre becas para estudiantes latinos en Estados Unidos. ¿Alguien tiene experiencia?', 'Education', 'post'),
-        ($3, 'College Prep Guide: A Professional''s Roadmap', 'A comprehensive guide to preparing for college entrance exams, written by an education professional with 10+ years of experience.', 'Education', 'article')
+        ($1, 'How to prepare for college entrance exams?',
+             'I am a junior in high school and I want to prepare for my college entrance exams. What are the best resources available?',
+             'Education', 'post'),
+        ($2, '¿Becas disponibles para estudiantes hispanos?',
+             'Estoy buscando información sobre becas para estudiantes latinos en Estados Unidos. ¿Alguien tiene experiencia?',
+             'Education', 'post'),
+        ($3, 'College Prep Guide: A Professional''s Roadmap',
+             'A comprehensive guide to preparing for college entrance exams, written by an education professional with 10+ years of experience.',
+             'Education', 'article')
       RETURNING id;
     `, [userIds[0], userIds[1], userIds[2]]);
 
-    // Seed Posts (Healthcare) - mix of posts and articles
+    // Seed Posts — Healthcare
     const healthcarePosts = await client.query(`
       INSERT INTO posts (user_id, title, body, category, type)
       VALUES
-        ($1, 'How to find affordable healthcare in my city?', 'I don''t have health insurance and need medical attention. What are my options?', 'Healthcare', 'post'),
-        ($2, 'Síntomas comunes del COVID-19', 'Mi familia tiene síntomas. ¿Cuáles son los signos de COVID y cuándo debo buscar ayuda médica?', 'Healthcare', 'post'),
-        ($3, 'Healthcare Access in Hispanic Communities', 'Written by a healthcare professional, this article explores resources and options for obtaining affordable healthcare for underinsured Hispanic families.', 'Healthcare', 'article')
+        ($1, 'How to find affordable healthcare in my city?',
+             'I don''t have health insurance and need medical attention. What are my options?',
+             'Healthcare', 'post'),
+        ($2, 'Síntomas comunes del COVID-19',
+             'Mi familia tiene síntomas. ¿Cuáles son los signos de COVID y cuándo debo buscar ayuda médica?',
+             'Healthcare', 'post'),
+        ($3, 'Healthcare Access in Hispanic Communities',
+             'Written by a healthcare professional, this article explores resources and options for obtaining affordable healthcare for underinsured Hispanic families.',
+             'Healthcare', 'article')
       RETURNING id;
     `, [userIds[3], userIds[4], userIds[0]]);
 
-    // Seed Posts (New Tech) - mix of posts and articles
+    // Seed Posts — New Tech
     const techPosts = await client.query(`
       INSERT INTO posts (user_id, title, body, category, type)
       VALUES
-        ($1, 'Getting started with coding - where to begin?', 'I want to learn programming but don''t know where to start. What programming language should I learn first?', 'New Tech', 'post'),
-        ($2, 'Recursos gratis para aprender programación', 'He visto mucha demanda de programadores. ¿Hay cursos en línea en español que sean gratuitos?', 'New Tech', 'post'),
-        ($3, 'Career Pathways in AI: A Professional Guide', 'An in-depth article by a tech professional covering the skills, resources, and career trajectories in artificial intelligence and machine learning.', 'New Tech', 'article')
+        ($1, 'Getting started with coding - where to begin?',
+             'I want to learn programming but don''t know where to start. What programming language should I learn first?',
+             'New Tech', 'post'),
+        ($2, 'Recursos gratis para aprender programación',
+             'He visto mucha demanda de programadores. ¿Hay cursos en línea en español que sean gratuitos?',
+             'New Tech', 'post'),
+        ($3, 'Career Pathways in AI: A Professional Guide',
+             'An in-depth article by a tech professional covering the skills, resources, and career trajectories in artificial intelligence.',
+             'New Tech', 'article')
       RETURNING id;
     `, [userIds[1], userIds[2], userIds[4]]);
 
-    console.log('✅ Seeded posts (6 posts, 3 articles)');
+    console.log('✅ Seeded 9 posts (6 posts, 3 articles)');
 
     // Seed Comments
     const allPostIds = [
-      ...educationPosts.rows.map((r) => r.id),
-      ...healthcarePosts.rows.map((r) => r.id),
-      ...techPosts.rows.map((r) => r.id),
+      ...educationPosts.rows.map((r: { id: number }) => r.id),
+      ...healthcarePosts.rows.map((r: { id: number }) => r.id),
+      ...techPosts.rows.map((r: { id: number }) => r.id),
     ];
 
     await client.query(`
       INSERT INTO comments (post_id, user_id, body)
       VALUES
-        ($1, $2, 'Great question! I recommend starting with Khan Academy and then moving to more advanced courses.'),
-        ($3, $4, 'Las becas de Google y Microsoft son muy buenas para estudiantes latinos. Revisa sus sitios web.'),
-        ($5, $6, 'I used Duolingo and Babbel. Both are really helpful! Practice speaking with native speakers too.'),
-        ($7, $8, 'Check your local health department website. Many cities have free or low-cost clinics.'),
-        ($9, $10, 'Consulta con tu médico inmediatamente si tienes fiebre alta o dificultad para respirar.'),
-        ($11, $12, 'Organizations like NAMI offer free support groups. You are not alone!')
+        ($1,  $7,  'Great question! I recommend starting with Khan Academy and then moving to more advanced courses.'),
+        ($2,  $8,  'Las becas de Google y Microsoft son muy buenas para estudiantes latinos. Revisa sus sitios web.'),
+        ($3,  $9,  'This guide is amazing! Very helpful for first-generation college students.'),
+        ($4,  $10, 'Check your local health department website. Many cities have free or low-cost clinics.'),
+        ($5,  $11, 'Consulta con tu médico inmediatamente si tienes fiebre alta o dificultad para respirar.'),
+        ($6,  $12, 'Thank you for writing this. It really helps our community understand their options.'),
+        ($7,  $13, 'Start with Python! It''s beginner-friendly and very in-demand.'),
+        ($8,  $14, 'freeCodeCamp tiene cursos gratuitos y en español. ¡Los recomiendo mucho!'),
+        ($9,  $15, 'Great breakdown of AI career paths. Very informative for anyone looking to get into tech.')
       RETURNING id;
     `, [
-      allPostIds[0], userIds[1], allPostIds[1], userIds[3], allPostIds[2], userIds[4],
-      allPostIds[3], userIds[0], allPostIds[4], userIds[2], allPostIds[5], userIds[1],
+      allPostIds[0], allPostIds[1], allPostIds[2],
+      allPostIds[3], allPostIds[4], allPostIds[5],
+      allPostIds[6], allPostIds[7], allPostIds[8],
+      userIds[1], userIds[3], userIds[4],
+      userIds[0], userIds[2], userIds[1],
+      userIds[3], userIds[0], userIds[2],
     ]);
 
     console.log('✅ Seeded comments');
@@ -223,21 +313,21 @@ const resetDatabase = async () => {
     await client.query(`
       INSERT INTO resources (category, title, url, description, language, priority)
       VALUES
-        ('Education', 'Khan Academy', 'https://www.khanacademy.org', 'Free educational videos covering math, science, and more', 'en', 10),
-        ('Education', 'Khan Academy en Español', 'https://es.khanacademy.org', 'Videos educativos gratuitos en español', 'es', 10),
-        ('Education', 'Coursera', 'https://www.coursera.org', 'Online courses from top universities', 'en', 9),
-        ('Healthcare', 'CDC COVID-19 Info', 'https://www.cdc.gov/coronavirus/', 'Official COVID-19 information and guidance', 'en', 10),
-        ('Healthcare', 'Salud en Español', 'https://salud.nih.gov', 'Health information in Spanish from NIH', 'es', 10),
-        ('Healthcare', 'Planned Parenthood', 'https://www.plannedparenthood.org', 'Reproductive health information and services', 'en', 8),
-        ('New Tech', 'freeCodeCamp', 'https://www.freecodecamp.org', 'Free coding bootcamp and tutorials', 'en', 10),
-        ('New Tech', 'Codecademy', 'https://www.codecademy.com', 'Interactive coding courses', 'en', 9),
-        ('New Tech', 'Google Colab', 'https://colab.research.google.com', 'Free Jupyter notebooks for machine learning', 'en', 9)
-      RETURNING id;
+        ('Education', 'Khan Academy',            'https://www.khanacademy.org',          'Free educational videos covering math, science, and more', 'en', 10),
+        ('Education', 'Khan Academy en Español', 'https://es.khanacademy.org',           'Videos educativos gratuitos en español',                   'es', 10),
+        ('Education', 'Coursera',                'https://www.coursera.org',             'Online courses from top universities',                     'en',  9),
+        ('Healthcare', 'CDC Health Info',        'https://www.cdc.gov',                  'Official health information and guidance',                 'en', 10),
+        ('Healthcare', 'Salud en Español',       'https://salud.nih.gov',                'Health information in Spanish from NIH',                   'es', 10),
+        ('Healthcare', 'Planned Parenthood',     'https://www.plannedparenthood.org',    'Reproductive health information and services',             'en',  8),
+        ('New Tech',   'freeCodeCamp',           'https://www.freecodecamp.org',         'Free coding bootcamp and tutorials',                      'en', 10),
+        ('New Tech',   'Codecademy',             'https://www.codecademy.com',           'Interactive coding courses',                              'en',  9),
+        ('New Tech',   'Google Colab',           'https://colab.research.google.com',    'Free Jupyter notebooks for machine learning',             'en',  9)
     `);
 
     console.log('✅ Seeded resources');
-
-    console.log('🎉 Database reset and seeded successfully!');
+    console.log('');
+    console.log('🎉 Database reset complete!');
+    console.log('📝 Demo login: username = maria_garcia | password = demo1234');
     process.exit(0);
   } catch (error) {
     console.error('💥 Error resetting database:', error);
