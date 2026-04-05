@@ -49,7 +49,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
 
     // Fetch user from database
     const result = await pool.query(
-      'SELECT id, username, password_hash, email, display_name, avatar_url, role, latitude, longitude, location_name FROM users WHERE username = $1 AND deleted_at IS NULL',
+      'SELECT id, username, password_hash, email, display_name, avatar_url, role, latitude, longitude, location_name, preferred_language FROM users WHERE username = $1 AND deleted_at IS NULL',
       [username.trim()]
     );
     const user = result.rows[0];
@@ -93,6 +93,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
         latitude: user.latitude,
         longitude: user.longitude,
         locationName: user.location_name,
+        preferredLanguage: user.preferred_language || 'en',
       },
     });
   } catch (err) {
@@ -107,7 +108,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
  */
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, password, email, role, latitude, longitude, locationName } = req.body as RegisterRequest;
+    const { username, password, email, role, latitude, longitude, locationName, preferredLanguage } = req.body as RegisterRequest & { preferredLanguage?: string };
 
     // Validation
     if (!username || !password || !email) {
@@ -118,6 +119,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim().toLowerCase();
     const userRole = role && ['regular', 'professional'].includes(role) ? role : 'regular';
+    const languagePreference = preferredLanguage && ['en', 'es'].includes(preferredLanguage) ? preferredLanguage : 'en';
 
     // Validate username
     const usernameError = validateUsername(trimmedUsername);
@@ -152,10 +154,9 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     // Hash the password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Insert new user into database with geolocation
     const newUserResult = await pool.query(
-      'INSERT INTO users (username, password_hash, email, display_name, role, latitude, longitude, location_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, username, email, display_name, role, latitude, longitude, location_name',
-      [trimmedUsername, passwordHash, trimmedEmail, trimmedUsername, userRole, latitude || null, longitude || null, locationName || null]
+      'INSERT INTO users (username, password_hash, email, display_name, role, latitude, longitude, location_name, preferred_language) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, username, email, display_name, role, latitude, longitude, location_name, preferred_language',
+      [trimmedUsername, passwordHash, trimmedEmail, trimmedUsername, userRole, latitude || null, longitude || null, locationName || null, languagePreference]
     );
 
     const newUser = newUserResult.rows[0];
@@ -184,6 +185,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
         role: newUser.role,
         latitude: newUser.latitude,
         longitude: newUser.longitude,
+        preferredLanguage: newUser.preferred_language || 'en',
         locationName: newUser.location_name,
       },
     });
@@ -206,7 +208,7 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
     }
 
     const result = await pool.query(
-      'SELECT id, username, email, display_name, avatar_url, role, latitude, longitude, location_name, created_at FROM users WHERE id = $1 AND deleted_at IS NULL',
+      'SELECT id, username, email, display_name, avatar_url, role, latitude, longitude, location_name, preferred_language, created_at FROM users WHERE id = $1 AND deleted_at IS NULL',
       [userId]
     );
 
@@ -227,6 +229,7 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
         latitude: user.latitude,
         longitude: user.longitude,
         locationName: user.location_name,
+        preferredLanguage: user.preferred_language || 'en',
         createdAt: user.created_at,
       },
     });
@@ -287,9 +290,55 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
+/**
+ * Update user's language preference
+ */
+export const updateLanguagePreference = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { preferredLanguage } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    // Validate language
+    if (!preferredLanguage || !['en', 'es'].includes(preferredLanguage)) {
+      res.status(400).json({ error: 'Invalid language. Must be "en" or "es"' });
+      return;
+    }
+
+    // Update user's language preference
+    const result = await pool.query(
+      'UPDATE users SET preferred_language = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND deleted_at IS NULL RETURNING id, username, preferred_language',
+      [preferredLanguage, userId]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const user = result.rows[0];
+    res.status(200).json({
+      message: 'Language preference updated successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        preferredLanguage: user.preferred_language,
+      },
+    });
+  } catch (err) {
+    console.error('Error updating language preference:', err);
+    res.status(500).json({ error: 'An error occurred while updating language preference' });
+  }
+};
+
 export default {
   loginUser,
   registerUser,
   getCurrentUser,
   updateUser,
+  updateLanguagePreference,
 };

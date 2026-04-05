@@ -11,6 +11,7 @@ export interface User {
   latitude: number | null;
   longitude: number | null;
   locationName: string | null;
+  preferredLanguage: "en" | "es";
 }
 
 interface AuthContextValue {
@@ -25,10 +26,12 @@ interface AuthContextValue {
     latitude?: number;
     longitude?: number;
     locationName?: string;
+    preferredLanguage?: "en" | "es";
   }) => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
+  updateLanguagePreference: (language: "en" | "es") => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -60,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       latitude?: number;
       longitude?: number;
       locationName?: string;
+      preferredLanguage?: "en" | "es";
     }) => {
       setLoading(true);
       setError(null);
@@ -74,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           latitude: response.user.latitude,
           longitude: response.user.longitude,
           locationName: response.user.locationName,
+          preferredLanguage: response.user.preferredLanguage || "en",
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Registration failed";
@@ -101,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           latitude: response.user.latitude,
           longitude: response.user.longitude,
           locationName: response.user.locationName,
+          preferredLanguage: response.user.preferredLanguage || "en",
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Login failed";
@@ -121,6 +127,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
+  const updateLanguagePreference = useCallback(
+    async (language: "en" | "es") => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await authAPI.updateLanguagePreference(language);
+        if (user) {
+          const updatedUser: User = {
+            ...user,
+            preferredLanguage: language,
+          };
+          storeAuth(localStorage.getItem("token") || "", updatedUser);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to update language preference";
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, storeAuth]
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -132,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login: handleLogin,
         logout,
         setUser,
+        updateLanguagePreference,
       }}
     >
       {children}

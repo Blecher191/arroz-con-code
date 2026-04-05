@@ -34,7 +34,7 @@ export default function TranslateButton({
   if (translated) {
     return (
       <span className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-gray-500">
-        ✓ Translated
+        ✓ Translated to Spanish
       </span>
     );
   }

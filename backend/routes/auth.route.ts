@@ -11,5 +11,6 @@ router.post('/register', authController.registerUser);
 // Protected routes
 router.get('/me', authenticateToken, authController.getCurrentUser);
 router.put('/me', authenticateToken, authController.updateUser);
+router.put('/language-preference', authenticateToken, authController.updateLanguagePreference);
 
 export default router;

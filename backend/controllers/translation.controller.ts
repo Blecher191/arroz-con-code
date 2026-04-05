@@ -3,8 +3,8 @@ import { pool } from '../config/database.ts';
 import axios from 'axios';
 import type { TranslateRequest, TranslationResponse, LibreTranslateRequest, LibreTranslateResponse } from '../interfaces/translation.interfaces.ts';
 
-// LibreTranslate API endpoint (free, open-source)
-const LIBRETRANSLATE_URL = 'https://libretranslate.de/translate';
+// MyMemory API endpoint (free, no authentication required)
+const MYMEMORY_API_URL = 'https://api.mymemory.translated.net/get';
 
 // Language code mapping
 const LANGUAGE_MAP: Record<string, string> = {
@@ -99,24 +99,48 @@ export const translatePost = async (req: Request, res: Response): Promise<void> 
 
     // If target language is same as original, no need to translate
     if (originalLanguage === targetLanguage) {
+      console.log(`ℹ Original language same as target (${originalLanguage}). Returning error.`);
       res.status(400).json({ error: 'Post is already in the target language' });
       return;
     }
 
-    // Call LibreTranslate API
+    // Call MyMemory API
     console.log(`🌐 Translating post ${postId} from ${originalLanguage} to ${targetLanguage}...`);
+    console.log(`Post body: "${postBody}"`);
+    console.log(`Sending to MyMemory: q="${postBody.substring(0, 50)}...", langpair=${originalLanguage}|${targetLanguage}`);
+    
+    const requestParams = {
+      q: postBody,
+      langpair: `${LANGUAGE_MAP[originalLanguage]}|${LANGUAGE_MAP[targetLanguage]}`,
+    };
+    console.log(`Request params:`, requestParams);
     
     try {
-      const response = await axios.post<LibreTranslateResponse>(
-        LIBRETRANSLATE_URL,
-        {
-          q: postBody,
-          source: LANGUAGE_MAP[originalLanguage],
-          target: LANGUAGE_MAP[targetLanguage],
-        } as LibreTranslateRequest
+      console.log(`Making axios GET request to: ${MYMEMORY_API_URL}`);
+      const response = await axios.get<any>(
+        MYMEMORY_API_URL,
+        { 
+          params: requestParams,
+          timeout: 30000 // 30 second timeout
+        }
       );
 
-      const translatedText = response.data.translatedText as string;
+      console.log(`✅ MyMemory response status: ${response.status}`);
+      console.log(`Response type: ${typeof response.data}`);
+      console.log(`Response.data is null/undefined: ${response.data === null || response.data === undefined}`);
+      console.log(`Response.data structure:`, Object.keys(response.data || {}));
+      
+      // MyMemory returns: { responseStatus: 200, responseData: { translatedText: "..." } }
+      const responseData = response.data?.responseData;
+      console.log(`responseData:`, responseData);
+      const translatedText = responseData?.translatedText;
+      console.log(`Extracted translatedText: "${translatedText}" (type: ${typeof translatedText}, length: ${(translatedText as any)?.length})`);
+
+      if (!translatedText || typeof translatedText !== 'string' || translatedText.trim() === '') {
+        console.error('❌ MyMemory returned invalid translatedText:', { received: translatedText, responseStatus: response.status, responseData });
+        res.status(500).json({ error: 'Translation API returned invalid result format' });
+        return;
+      }
 
       // Store translation in database
       const insertResult = await pool.query(
@@ -137,9 +161,14 @@ export const translatePost = async (req: Request, res: Response): Promise<void> 
       } as TranslationResponse);
 
       console.log(`✅ Translation complete for post ${postId}`);
-    } catch (apiErr) {
-      console.error('Error calling LibreTranslate API:', apiErr);
-      res.status(500).json({ error: 'Failed to translate post' });
+    } catch (apiErr: any) {
+      console.error('❌ Error calling MyMemory API');
+      console.error('Error message:', apiErr?.message);
+      console.error('Error code:', apiErr?.code);
+      console.error('Error response status:', apiErr?.response?.status);
+      console.error('Error response data:', apiErr?.response?.data);
+      console.error('Full error:', apiErr);
+      res.status(500).json({ error: 'Failed to call translation API' });
     }
   } catch (err) {
     console.error('Error during translation:', err);

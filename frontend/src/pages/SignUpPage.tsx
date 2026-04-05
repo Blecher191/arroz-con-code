@@ -13,6 +13,7 @@ export default function SignUpPage() {
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
     locationName: "",
+    preferredLanguage: "en" as "en" | "es",
   });
   const [localError, setLocalError] = useState<string | null>(null);
   const [geolocationStatus, setGeolocationStatus] = useState<'idle' | 'loading' | 'success' | 'denied'>('idle');
@@ -37,11 +38,11 @@ export default function SignUpPage() {
     }
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: name === 'preferredLanguage' ? (value as "en" | "es") : value,
     }));
     setLocalError(null);
   };
@@ -72,6 +73,7 @@ export default function SignUpPage() {
         latitude: formData.latitude,
         longitude: formData.longitude,
         locationName: formData.locationName || undefined,
+        preferredLanguage: formData.preferredLanguage,
       });
       // Redirect to feed on success
       navigate("/", { replace: true });
@@ -175,6 +177,23 @@ export default function SignUpPage() {
               Coordinates: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
             </p>
           )}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700" htmlFor="preferredLanguage">
+            Preferred Language
+          </label>
+          <select
+            id="preferredLanguage"
+            name="preferredLanguage"
+            value={formData.preferredLanguage}
+            onChange={handleChange}
+            disabled={loading}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100"
+          >
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
         </div>
 
         <button

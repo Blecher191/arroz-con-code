@@ -57,6 +57,7 @@ export const authAPI = {
     latitude?: number;
     longitude?: number;
     locationName?: string;
+    preferredLanguage?: "en" | "es";
   }) =>
     apiCall<{
       token: string;
@@ -69,6 +70,7 @@ export const authAPI = {
         latitude: number | null;
         longitude: number | null;
         locationName: string | null;
+        preferredLanguage: "en" | "es";
       };
     }>('/auth/register', {
       method: 'POST',
@@ -87,6 +89,7 @@ export const authAPI = {
         latitude: number | null;
         longitude: number | null;
         locationName: string | null;
+        preferredLanguage: "en" | "es";
       };
     }>('/auth/login', {
       method: 'POST',
@@ -103,6 +106,7 @@ export const authAPI = {
       latitude: number | null;
       longitude: number | null;
       locationName: string | null;
+      preferredLanguage: "en" | "es";
     }>('/auth/me'),
 
   updateUser: (data: {
@@ -119,6 +123,16 @@ export const authAPI = {
     }>('/auth/me', {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+
+  updateLanguagePreference: (preferredLanguage: "en" | "es") =>
+    apiCall<{
+      id: number;
+      username: string;
+      preferredLanguage: "en" | "es";
+    }>('/auth/language-preference', {
+      method: 'PUT',
+      body: JSON.stringify({ preferredLanguage }),
     }),
 };
 
