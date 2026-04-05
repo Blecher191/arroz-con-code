@@ -19,6 +19,20 @@ export default function ArticleDetailPage() {
   const { factCheck, loading: factCheckLoading, refetch: refetchFactCheck } = useFactCheck(postId);
   const [translatedBody, setTranslatedBody] = useState<string | null>(null);
 
+  // Auto-trigger fact-check if not yet checked
+  // Must be before early returns to avoid hook order issues
+  useEffect(() => {
+    if (factCheck && !factCheck.isFactChecked && postId) {
+      // Trigger fact-check and refetch results
+      factCheckAPI.triggerFactCheck(postId).then(() => {
+        // Refetch fact-check data after triggering
+        setTimeout(() => refetchFactCheck(), 500);
+      }).catch(() => {
+        console.log('Fact-check trigger started (results will update when available)');
+      });
+    }
+  }, [factCheck?.isFactChecked, postId, refetchFactCheck]);
+
   if (loading) {
     return (
       <section className="mx-auto max-w-2xl px-4 py-8">
@@ -52,19 +66,6 @@ export default function ArticleDetailPage() {
   const categoryColor =
     CATEGORY_COLORS[post.category as Category] || "bg-gray-50 text-gray-700";
   const displayBody = translatedBody || post.body;
-
-  // Auto-trigger fact-check if not yet checked
-  useEffect(() => {
-    if (factCheck && !factCheck.isFactChecked && postId) {
-      // Trigger fact-check and refetch results
-      factCheckAPI.triggerFactCheck(postId).then(() => {
-        // Refetch fact-check data after triggering
-        setTimeout(() => refetchFactCheck(), 500);
-      }).catch(() => {
-        console.log('Fact-check trigger started (results will update when available)');
-      });
-    }
-  }, [factCheck?.isFactChecked, postId, refetchFactCheck]);
 
   return (
     <section className="mx-auto max-w-2xl px-4 py-8">

@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { useLike } from '../hooks/useApi';
+import { useLike, usePostLikes } from '../hooks/useApi';
 
 interface LikeButtonProps {
   postId: number;
@@ -17,10 +17,13 @@ export default function LikeButton({
   initialLiked = false,
   initialCount = 0,
 }: LikeButtonProps) {
-  const { togglePostLike, loading } = useLike();
-  const [liked, setLiked] = useState(initialLiked);
-  const [count, setCount] = useState(initialCount);
+  const { togglePostLike, loading: togglingLike } = useLike();
+  const { likeCount: fetchedCount, userLiked: fetchedLiked, loading: fetchingLikes } = usePostLikes(postId);
+  const [liked, setLiked] = useState(initialLiked || fetchedLiked);
+  const [count, setCount] = useState(initialCount || fetchedCount);
   const [error, setError] = useState<string | null>(null);
+
+  const loading = togglingLike || fetchingLikes;
 
   const handleClick = async () => {
     if (loading) return;

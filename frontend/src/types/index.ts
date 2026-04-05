@@ -12,4 +12,6 @@ export interface Post {
   authorDisplayName?: string;
   locationName?: string;
   type?: "post" | "article";
+  likeCount?: number;
+  userLiked?: boolean;
 }

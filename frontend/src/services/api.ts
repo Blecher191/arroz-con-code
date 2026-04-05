@@ -66,6 +66,7 @@ export const authAPI = {
         username: string;
         email: string;
         displayName: string | null;
+        avatarUrl: string | null;
         role: string;
         latitude: number | null;
         longitude: number | null;
@@ -85,6 +86,7 @@ export const authAPI = {
         username: string;
         email: string;
         displayName: string | null;
+        avatarUrl: string | null;
         role: string;
         latitude: number | null;
         longitude: number | null;
@@ -102,6 +104,7 @@ export const authAPI = {
       username: string;
       email: string;
       displayName: string | null;
+      avatarUrl: string | null;
       role: string;
       latitude: number | null;
       longitude: number | null;
@@ -119,7 +122,13 @@ export const authAPI = {
     apiCall<{
       id: number;
       username: string;
+      email: string;
       displayName: string | null;
+      avatarUrl: string | null;
+      role: string;
+      latitude: number | null;
+      longitude: number | null;
+      locationName: string | null;
     }>('/auth/me', {
       method: 'PUT',
       body: JSON.stringify(data),

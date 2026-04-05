@@ -21,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "/community", element: <CommunityBoardPage /> },
       { path: "/signup", element: <SignUpPage /> },
       { path: "/signin", element: <SignInPage /> },
+      { path: "/login", element: <SignInPage /> },
       { path: "/post/:id", element: <PostDetailPage /> },
       {
         path: "/post/new",

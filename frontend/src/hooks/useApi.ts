@@ -2,7 +2,7 @@
  * Custom hooks for API operations
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   postsAPI,
   commentsAPI,
@@ -25,11 +25,20 @@ export function usePosts(params?: {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Memoize params to prevent unnecessary re-renders
+  const memoizedParams = useMemo(() => params, [
+    params?.category,
+    params?.userId,
+    params?.latitude,
+    params?.longitude,
+    params?.radius,
+  ]);
+
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await postsAPI.getPosts(params);
+      const data = await postsAPI.getPosts(memoizedParams);
       setPosts(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch posts";
@@ -37,7 +46,7 @@ export function usePosts(params?: {
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [memoizedParams]);
 
   useEffect(() => {
     fetchPosts();
@@ -215,6 +224,43 @@ export function useLike() {
   );
 
   return { togglePostLike, toggleCommentLike, loading, error };
+}
+
+/**
+ * Hook for fetching and managing post likes
+ */
+export function usePostLikes(postId: number) {
+  const [likeCount, setLikeCount] = useState(0);
+  const [userLiked, setUserLiked] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLikes = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await likesAPI.getPostLikes(postId);
+        setLikeCount(data.likeCount ?? 0);
+        setUserLiked(data.userLiked ?? false);
+      } catch (err) {
+        // Likes endpoint might not exist or user not authenticated, set defaults
+        setLikeCount(0);
+        setUserLiked(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLikes();
+  }, [postId]);
+
+  const handleLikeChange = (liked: boolean) => {
+    setUserLiked(liked);
+    setLikeCount(prev => (liked ? prev + 1 : Math.max(0, prev - 1)));
+  };
+
+  return { likeCount, userLiked, loading, error, handleLikeChange };
 }
 
 /**

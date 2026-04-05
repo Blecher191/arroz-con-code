@@ -7,6 +7,7 @@ export interface User {
   username: string;
   email: string;
   displayName: string | null;
+  avatarUrl: string | null;
   role: "regular" | "professional";
   latitude: number | null;
   longitude: number | null;
@@ -32,6 +33,10 @@ interface AuthContextValue {
   logout: () => void;
   setUser: (user: User | null) => void;
   updateLanguagePreference: (language: "en" | "es") => Promise<void>;
+  updateUser: (data: {
+    displayName?: string;
+    avatarUrl?: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -74,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: response.user.username,
           email: response.user.email,
           displayName: response.user.displayName,
+          avatarUrl: response.user.avatarUrl || null,
           role: response.user.role as "regular" | "professional",
           latitude: response.user.latitude,
           longitude: response.user.longitude,
@@ -102,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: response.user.username,
           email: response.user.email,
           displayName: response.user.displayName,
+          avatarUrl: response.user.avatarUrl || null,
           role: response.user.role as "regular" | "professional",
           latitude: response.user.latitude,
           longitude: response.user.longitude,
@@ -151,6 +158,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, storeAuth]
   );
 
+  const updateProfileUser = useCallback(
+    async (data: { displayName?: string; avatarUrl?: string }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await authAPI.updateUser(data);
+        if (user) {
+          const updatedUser: User = {
+            ...user,
+            displayName: data.displayName ?? user.displayName,
+            avatarUrl: data.avatarUrl ?? user.avatarUrl,
+          };
+          storeAuth(localStorage.getItem("token") || "", updatedUser);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to update profile";
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, storeAuth]
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -163,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         setUser,
         updateLanguagePreference,
+        updateUser: updateProfileUser,
       }}
     >
       {children}
