@@ -14,7 +14,7 @@ export default function ProfessionalRoute({ children }: ProfessionalRouteProps) 
     return <Navigate to="/signin" state={{ from: location }} replace />;
   }
 
-  if (!user?.isVerified) {
+  if (user?.role !== 'professional') {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
         <h2 className="text-xl font-semibold text-gray-900">
