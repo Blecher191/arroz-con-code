@@ -3,21 +3,45 @@ import { pool } from '../config/database.ts';
 import type { CreatePostRequest } from '../interfaces/posts.interfaces.ts';
 
 // GET /api/posts
-// Public - supports ?category=Education&page=1&limit=10
+// Public - supports ?category=Education&latitude=X&longitude=Y&radius=5&page=1&limit=10
 const getAllPosts = async (req: Request, res: Response) => {
     try {
-        const { category, page = '1', limit = '10' } = req.query;
+        const { category, latitude, longitude, radius, page = '1', limit = '10' } = req.query;
 
         const pageNum = Math.max(1, parseInt(page as string));
         const limitNum = Math.min(50, Math.max(1, parseInt(limit as string)));
         const offset = (pageNum - 1) * limitNum;
 
-        let query = 'SELECT * FROM posts_with_stats';
         const params: any[] = [];
+        const conditions: string[] = [];
 
         if (category) {
             params.push(category);
-            query += ` WHERE category = $${params.length}`;
+            conditions.push(`category = $${params.length}`);
+        }
+
+        // Radius filter using Haversine formula (radius in km, default 10km)
+        if (latitude && longitude) {
+            const lat = parseFloat(latitude as string);
+            const lng = parseFloat(longitude as string);
+            const rad = parseFloat((radius as string) || '10');
+
+            params.push(lat, lng, rad);
+            conditions.push(`
+                (latitude IS NOT NULL AND longitude IS NOT NULL AND
+                6371 * acos(
+                    cos(radians($${params.length - 2})) *
+                    cos(radians(latitude)) *
+                    cos(radians(longitude) - radians($${params.length - 1})) +
+                    sin(radians($${params.length - 2})) *
+                    sin(radians(latitude))
+                ) <= $${params.length})
+            `);
+        }
+
+        let query = 'SELECT * FROM posts_with_stats';
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
         }
 
         query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
