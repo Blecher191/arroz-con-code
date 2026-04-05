@@ -6,13 +6,9 @@ import TranslateButton from "../components/TranslateButton";
 import FactCheckBadge from "../components/FactCheckBadge";
 import LikeButton from "../components/LikeButton";
 import { formatTime } from "../utils/formatTime";
+import type { Category } from "../types";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Education: "bg-blue-50 text-blue-700",
-  Healthcare: "bg-rose-50 text-rose-700",
-  Technology: "bg-violet-50 text-violet-700",
-  "New Tech": "bg-violet-50 text-violet-700",
-};
+import { CATEGORY_COLORS } from "../utils/categories";
 
 export default function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -53,7 +49,7 @@ export default function ArticleDetailPage() {
     post.author_display_name || post.author_username || "Anonymous";
   const initial = authorDisplay.charAt(0).toUpperCase();
   const categoryColor =
-    CATEGORY_COLORS[post.category] || "bg-gray-50 text-gray-700";
+    CATEGORY_COLORS[post.category as Category] || "bg-gray-50 text-gray-700";
   const displayBody = translatedBody || post.body;
 
   return (

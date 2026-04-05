@@ -2,32 +2,15 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { useFactCheck } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
+import { CATEGORY_COLORS } from "../utils/categories";
+import type { Post, Category } from "../types";
 import ProfessionalBadge from "./ProfessionalBadge";
 import FactCheckBadge from "./FactCheckBadge";
 import LikeButton from "./LikeButton";
 import TranslateButton from "./TranslateButton";
 
-type Category = "Education" | "Healthcare" | "Technology" | "New Tech";
-
-const CATEGORY_COLORS: Record<Category, string> = {
-  Education: "bg-blue-50 text-blue-700",
-  Healthcare: "bg-rose-50 text-rose-700",
-  Technology: "bg-violet-50 text-violet-700",
-  "New Tech": "bg-violet-50 text-violet-700",
-};
-
 interface ArticleCardProps {
-  post: {
-    id: number;
-    title: string;
-    body: string;
-    category: Category;
-    createdAt: string;
-    authorUsername: string;
-    authorDisplayName?: string;
-    locationName?: string;
-    type?: "post" | "article";
-  };
+  post: Post;
   isVerified?: boolean;
 }
 
