@@ -3,14 +3,16 @@ import { useTranslatePost } from "../hooks/useApi";
 
 interface TranslateButtonProps {
   postId: number;
-  onTranslate?: () => Promise<void>;
   isTranslated?: boolean;
+  onTranslate?: () => Promise<void>;
+  onTranslated?: (body: string) => void;
 }
 
 export default function TranslateButton({
   postId,
-  onTranslate,
   isTranslated = false,
+  onTranslate,
+  onTranslated,
 }: TranslateButtonProps) {
   const { translate, loading, error } = useTranslatePost();
   const [translated, setTranslated] = useState(isTranslated);
@@ -18,11 +20,14 @@ export default function TranslateButton({
   async function handleClick() {
     if (translated) return;
     try {
-      await translate(postId, 'es');
+      const result = await translate(postId, "es");
       setTranslated(true);
+      if (result && onTranslated) {
+        onTranslated(result.translatedText);
+      }
       await onTranslate?.();
-    } catch (err) {
-      // Error handled by hook
+    } catch {
+      // error handled by hook
     }
   }
 
