@@ -122,9 +122,9 @@
 | Developer | Role               | Responsibilities                                     |
 | --------- | ------------------ | ---------------------------------------------------- |
 | **David** | Backend / API Lead | Database schema, auth, AI integrations, fact-checking, translation |
-| **D1**    | Frontend / UI Lead | Layout, pages, i18n strings, responsive design       |
-| **D2**    | Community Features | Community board UI, posts, comments, location filtering |
-| **D3**    | Integration Lead   | Geolocation features, real-time updates              |
+| **Oscar**    | Frontend / UI Lead | Layout, pages, i18n strings, responsive design       |
+| **Sergio/Randy**    | Community Features | Community board UI, posts, comments, location filtering |
+| **David/Oscar**    | Integration Lead   | Geolocation features, real-time updates              |
 
 ---
 
